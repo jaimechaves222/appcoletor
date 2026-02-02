@@ -125,7 +125,7 @@
   <h1>📦 Conferência Universal</h1>
   <p class="sub">Leitura livre • Vibração no acerto</p>
 
-  <input id="codigoEsperado" placeholder="Digite o código esperado">
+  <input id="codigoEsperado" placeholder="Digite a cx perdida">
 
   <button onclick="iniciarScanner()">📷 Iniciar leitura</button>
 
@@ -133,7 +133,7 @@
 
   <div id="resultado"></div>
 
-  <footer>Uso em estoque • HTTPS obrigatório</footer>
+  <footer>Uso no estoque ecommerce • Jaime Giovane</footer>
 </div>
 
 <script>
@@ -192,7 +192,7 @@
     const resultado = document.getElementById("resultado");
 
     if (!esperado) {
-      resultado.textContent = "Digite o código esperado";
+      resultado.textContent = "Digite a cx perdida";
       resultado.className = "erro";
       return;
     }
@@ -202,7 +202,7 @@
       resultado.innerHTML = "✅ CX ENCONTRADA: <br><small>" + lido + "</small>";
       resultado.className = "ok";
     } else {
-      resultado.innerHTML = "❌ NÃO CONFERE<br><small>Lido: " + lido + "</small>";
+      resultado.innerHTML = "❌ CX DIFERENTE: <br><small>Lido: " + lido + "</small>";
       resultado.className = "erro";
     }
   }
