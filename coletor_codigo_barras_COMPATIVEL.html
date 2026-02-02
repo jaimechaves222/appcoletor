@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Coletor de Código de Barras</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:#111; color:#fff; text-align:center; }
+header { padding:12px; background:#000; font-size:18px; }
+#camera { width:100%; height:65vh; background:#000; }
+#result { font-size:20px; padding:12px; background:#0a0; color:#000; margin:10px; border-radius:8px; }
+#log { max-height:150px; overflow-y:auto; background:#222; padding:10px; font-size:14px; }
+button { margin:8px; padding:14px 22px; font-size:16px; border-radius:6px; border:none; background:#ffcc00; color:#000; }
+.alert { padding:10px; background:#900; margin:10px; border-radius:6px; }
+</style>
+</head>
+
+<body>
+
+<header>📦 Coletor de Código de Barras</header>
+
+<div id="camera"></div>
+<div id="result">Toque em INICIAR e permita a câmera</div>
+
+<button onclick="startScanner()">▶ INICIAR</button>
+<button onclick="stopScanner()">⏹ PARAR</button>
+
+<div id="log"></div>
+
+<div id="alert" class="alert" style="display:none">
+⚠️ A câmera só funciona em <b>HTTPS</b> ou <b>http://localhost</b>
+</div>
+
+<audio id="beep">
+  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
+</audio>
+
+<script>
+let lastCode = null;
+
+function startScanner() {
+
+  if (location.protocol !== "https:" && location.hostname !== "localhost") {
+    document.getElementById("alert").style.display = "block";
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+      stream.getTracks().forEach(track => track.stop());
+
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector("#camera"),
+          constraints: {
+            facingMode: "environment"
+          }
+        },
+        decoder: {
+          readers: [
+            "code_128_reader",
+            "ean_reader",
+            "ean_8_reader",
+            "upc_reader",
+            "upc_e_reader"
+          ]
+        },
+        locate: true
+      }, function(err) {
+        if (err) {
+          alert("Erro ao iniciar scanner");
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(function(data) {
+        const code = data.codeResult.code;
+        if (code !== lastCode) {
+          lastCode = code;
+          document.getElementById("result").innerText = "✅ " + code;
+          document.getElementById("beep").play();
+          const time = new Date().toLocaleTimeString();
+          document.getElementById("log").innerHTML =
+            `<div>[${time}] ${code}</div>` + document.getElementById("log").innerHTML;
+          setTimeout(() => lastCode = null, 1200);
+        }
+      });
+    })
+    .catch(function() {
+      alert("Permissão de câmera negada ou indisponível");
+    });
+}
+
+function stopScanner() {
+  Quagga.stop();
+  document.getElementById("result").innerText = "Scanner parado";
+}
+</script>
+
+</body>
+</html>
