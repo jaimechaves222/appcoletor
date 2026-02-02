@@ -1,62 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Coletor de Código de Barras</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Verificador de Código de Barras</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <!-- Biblioteca correta para código de barras -->
+  <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
 
-<style>
-body { margin:0; font-family:Arial,sans-serif; background:#111; color:#fff; text-align:center; }
-header { padding:12px; background:#000; font-size:18px; }
-#camera { width:100%; height:65vh; background:#000; }
-#result { font-size:20px; padding:12px; background:#0a0; color:#000; margin:10px; border-radius:8px; }
-#log { max-height:150px; overflow-y:auto; background:#222; padding:10px; font-size:14px; }
-button { margin:8px; padding:14px 22px; font-size:16px; border-radius:6px; border:none; background:#ffcc00; color:#000; }
-.alert { padding:10px; background:#900; margin:10px; border-radius:6px; }
-</style>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 18px;
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    #scanner {
+      width: 100%;
+      max-width: 400px;
+      height: 250px;
+      margin: auto;
+      border: 2px dashed #333;
+    }
+
+    #resultado {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .ok { color: green; }
+    .erro { color: red; }
+  </style>
 </head>
-
 <body>
 
-<header>📦 Coletor de Código de Barras</header>
+  <h2>📦 Conferência de Código</h2>
 
-<div id="camera"></div>
-<div id="result">Toque em INICIAR e permita a câmera</div>
+  <input 
+    type="text" 
+    id="codigoEsperado" 
+    placeholder="Digite o código esperado"
+  >
 
-<button onclick="startScanner()">▶ INICIAR</button>
-<button onclick="stopScanner()">⏹ PARAR</button>
+  <br>
 
-<div id="log"></div>
+  <button onclick="iniciarScanner()">📷 Iniciar leitura</button>
 
-<div id="alert" class="alert" style="display:none">
-⚠️ A câmera só funciona em <b>HTTPS</b> ou <b>http://localhost</b>
-</div>
+  <div id="scanner"></div>
 
-<audio id="beep">
-  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
-</audio>
+  <div id="resultado"></div>
 
-<script>
-let lastCode = null;
-
-function startScanner() {
-
-  if (location.protocol !== "https:" && location.hostname !== "localhost") {
-    document.getElementById("alert").style.display = "block";
-    return;
-  }
-
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(function(stream) {
-      stream.getTracks().forEach(track => track.stop());
-
+  <script>
+    function iniciarScanner() {
       Quagga.init({
         inputStream: {
           name: "Live",
           type: "LiveStream",
-          target: document.querySelector("#camera"),
+          target: document.querySelector('#scanner'),
           constraints: {
             facingMode: "environment"
           }
@@ -69,39 +85,47 @@ function startScanner() {
             "upc_reader",
             "upc_e_reader"
           ]
-        },
-        locate: true
+        }
       }, function(err) {
         if (err) {
-          alert("Erro ao iniciar scanner");
+          alert("Erro ao iniciar a câmera");
           return;
         }
         Quagga.start();
       });
 
       Quagga.onDetected(function(data) {
-        const code = data.codeResult.code;
-        if (code !== lastCode) {
-          lastCode = code;
-          document.getElementById("result").innerText = "✅ " + code;
-          document.getElementById("beep").play();
-          const time = new Date().toLocaleTimeString();
-          document.getElementById("log").innerHTML =
-            `<div>[${time}] ${code}</div>` + document.getElementById("log").innerHTML;
-          setTimeout(() => lastCode = null, 1200);
-        }
+        const codigoLido = data.codeResult.code;
+        comparar(codigoLido);
+        Quagga.stop();
       });
-    })
-    .catch(function() {
-      alert("Permissão de câmera negada ou indisponível");
-    });
-}
+    }
 
-function stopScanner() {
-  Quagga.stop();
-  document.getElementById("result").innerText = "Scanner parado";
-}
-</script>
+    function comparar(codigoLido) {
+      const esperado = document.getElementById("codigoEsperado").value.trim();
+      const resultado = document.getElementById("resultado");
+
+      if (!esperado) {
+        resultado.innerHTML = "⚠️ Digite o código esperado";
+        resultado.className = "erro";
+        return;
+      }
+
+      if (codigoLido === esperado) {
+        resultado.innerHTML = "✅ CONFERE<br>Código: " + codigoLido;
+        resultado.className = "ok";
+      } else {
+        resultado.innerHTML = "❌ NÃO CONFERE<br>Lido: " + codigoLido;
+        resultado.className = "erro";
+      }
+    }
+  </script>
+
+  <p style="margin-top:30px;font-size:14px;color:#555;">
+    ⚠️ IMPORTANTE: Abra este arquivo no Google Chrome e, se possível, hospede em HTTPS
+    (GitHub Pages, Netlify ou servidor interno).
+  </p>
 
 </body>
 </html>
+
